@@ -1,0 +1,4 @@
+#be sure to add the following modules to python-ivi/ivi/local/__init__.py
+
+cp agilent44470.py ../../python-ivi/ivi/local
+cp agilent44472.py ../../python-ivi/ivi/local
