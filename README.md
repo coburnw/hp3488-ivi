@@ -9,7 +9,7 @@ devices for product development or test.
 This driver is composed of a driver for each plugin and the 3488A rack itself.  The following plugins are functional:
   * 44470A Ten Channel Differential Mux
   * 44472A Dual Four Channel VHF Mux
-  * 44473A 4 X 4 Matrix Switch
+  * 44473A 4 X 4 Matrix Switch (planned)
 
 No work has been done on the 3488A driver itself which would conceivably implement some sort of smart routing between plugins.
 Very much a work in progress.  
@@ -22,22 +22,15 @@ Very much a work in progress.
   * python-vxi11 https://github.com/python-ivi/python-vxi11
   
 ### Installation
+Using pip to install in editable mode seems the cleanest way to avoid pythons import troubles. Editable allows one to make changes to the repository and have them instantly available in their applicaton. As an aside, using pip install -e . works perfectly well for both python-ivi and the python-vxi11 repositories as well.
 
-The typical (and perhaps easiest) way to install found ivi drivers is to comingle them In-Tree with IVI's supplied drivers
-#### In Tree ####
-  * copy the drivers to the python-ivi/ivi/agilent folder.
-  * edit the agilent/__init__.py file to allow python to find your new drivers.
-  * rebuild and reinstall python-ivi.
-  * fiddle with the example code.
+    cd into repository
+    pip install -e .
 
-If you prefer to keep them more separate, this method works well:
-#### In Tree but separate ####
-  * see this [gist](https://gist.github.com/coburnw/57634c7e821dd7f32e9a68e1d14c16a4)
-  
+If pip refuses to install with an 'editable mode' error, see here for upgrading pip.
+
 ### Notes
   * developed for an HP3488A with an E2050A GPIB/ethernet bridge
-  * if any of the agilent3488 driver files are modified, python-ivi will
-    need to be rebuilt and reinstalled
   * routing is incredibly simplistic
   * with my older instruments, i had to define instr.term_char = '\n'.  I found
     this caused a conversion error during pack_int() of the python-vxi11

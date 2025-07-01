@@ -28,8 +28,8 @@ THE SOFTWARE.
 
 """
 
-from .. import ivi
-from .. import swtch
+import ivi
+from ivi import swtch
          
 class agilent44470(ivi.Driver, swtch.Base):
     '''Agilent HP44470 IVI 10 Channel Mux Option Board'''

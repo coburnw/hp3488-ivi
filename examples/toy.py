@@ -7,6 +7,10 @@ import time
 
 import ivi
 
+#import hp3488_ivi
+from hp3488_ivi import agilent44470
+from hp3488_ivi import agilent44472
+
 ##
 ## use IVI and the driver to interact with a vxi-11 connected instrument.
 ##
@@ -17,14 +21,14 @@ def printstate():
 if __name__ == '__main__':
     config_slot_1a = {'slot_id':1, 'group_id':0}
     config_slot_1b = {'slot_id':1, 'group_id':1}
-    bnc_a = ivi.local.agilent44472("TCPIP0::192.168.2.9::gpib0,9::INSTR", driver_setup=config_slot_1a)
-    bnc_b = ivi.local.agilent44472("TCPIP0::192.168.2.9::gpib0,9::INSTR", driver_setup=config_slot_1b)
+    bnc_a = agilent44472("TCPIP0::192.168.2.9::gpib0,9::INSTR", driver_setup=config_slot_1a)
+    bnc_b = agilent44472("TCPIP0::192.168.2.9::gpib0,9::INSTR", driver_setup=config_slot_1b)
     
     config_slot_4 = {'slot_id':4, 'group_id':0, 'is_mux':True}
-    mux = ivi.local.agilent44470("TCPIP0::192.168.2.9::gpib0,9::INSTR", driver_setup=config_slot_4)
+    mux = agilent44470("TCPIP0::192.168.2.9::gpib0,9::INSTR", driver_setup=config_slot_4)
 
     #mux.help()
-    #dvm.driver_operation.simulate = False
+    #mux.driver_operation.simulate = False
 
     #print(mux.identity.instrument_firmware_revision)
     #print(mux.identity.instrument_serial_number)
