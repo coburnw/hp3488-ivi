@@ -27,7 +27,7 @@ Using pip to install in editable mode seems the cleanest way to avoid pythons im
     cd into repository
     pip install -e .
 
-If pip refuses to install with an 'editable mode' error, see here for upgrading pip.
+If pip refuses to install with an 'editable mode' error, see [here](https://stackoverflow.com/a/73779542) for upgrading pip.
 
 ### Notes
   * developed for an HP3488A with an E2050A GPIB/ethernet bridge
