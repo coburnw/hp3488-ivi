@@ -1,17 +1,22 @@
 # hp3488-ivi
 HP3488 Switch/Control Unit driver for Python-IVI
 
-A simple but functional driver for interacting with the HP 3488A and 3499A Switch/Control Unit
+A simple but functional driver for interacting with the HP 3488A and 3499A
+Switch/Control Unit and their plugins.
 
-The HP 3488A is a modern styled (pre Agilent) rack for various switch modules often used for routing signals between 
+The HP 3488A is a modern styled (pre Agilent) (ugly) rack for various
+switch modules often used for routing signals between 
 devices for product development or test.
 
-This driver is composed of a driver for each plugin and the 3488A rack itself.  The following plugins are functional:
+This driver is composed of a driver for each plugin and the 3488A rack
+itself.  The following plugins are functional:
   * 44470A Ten Channel Differential Mux
   * 44472A Dual Four Channel VHF Mux
   * 44473A 4 X 4 Matrix Switch (planned)
 
-No work has been done on the 3488A driver itself which would conceivably implement some sort of smart routing between plugins.
+A preliminary 3488A driver has been added which currently only
+manages the plugins, but could conceivably implement some sort of
+smart routing between plugins in the future.
 Very much a work in progress.  
 
 ### Requirements
@@ -23,7 +28,7 @@ Very much a work in progress.
   
 ### Installation
 Using pip to install in editable mode seems the cleanest way to avoid pythons import troubles. Editable allows one to make changes to the repository and have them instantly available in their applicaton. As an aside, using pip install -e . works perfectly well for both python-ivi and the python-vxi11 repositories as well.
-
+    clone
     cd into repository
     pip install -e .
 
