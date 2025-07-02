@@ -17,6 +17,10 @@ itself.  The following plugins are functional:
 A preliminary 3488A driver has been added which currently only
 manages the plugins, but could conceivably implement some sort of
 smart routing between plugins in the future.
+
+This driver uses the 3488 command set.  The 3499 model can support the older
+command set if its mode is set to 3488 using the front panel.
+
 Very much a work in progress.  
 
 ### Requirements

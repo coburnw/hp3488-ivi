@@ -34,6 +34,7 @@ import ivi
 from ivi import swtch
 
 from .agilent44470 import agilent44470 as C44470
+#from .agilent44471 import agilent44471 as C44471
 from .agilent44472 import agilent44472 as C44472
 
 AcquisitionTypeMapping = {
@@ -50,7 +51,6 @@ class agilent3488(ivi.Driver, swtch.Base):
         print('enter init()')
         self._resource_string = args[0]
         
-        # self._slots = list()
         # other per-channel instrument-specific variables that are
         # referenced in _init_channels
 
@@ -67,7 +67,7 @@ class agilent3488(ivi.Driver, swtch.Base):
         self._bandwidth = 1e9
         # initialize other instrument-specific variables
 
-        self._identity_description = "Agilent HP3488 series IVI switch driver"
+        self._identity_description = "Agilent HP3488/HP3499 series Switch/Control Unit"
         self._identity_identifier = ""
         self._identity_revision = ""
         self._identity_vendor = ""
@@ -76,58 +76,23 @@ class agilent3488(ivi.Driver, swtch.Base):
         self._identity_instrument_firmware_revision = ""
         self._identity_specification_major_version = 4
         self._identity_specification_minor_version = 1
-        self._identity_supported_instrument_models =['HP3488A','HP3488B','HP3488R']
-
-        # self.channels._add_property('label',
-        #                 self._get_channel_label,
-        #                 self._set_channel_label,
-        #                 None,
-        #                 """
-        #                 Custom property documentation
-        #                 """)
-
-        # other instrument specific properties
+        self._identity_supported_instrument_models =['HP3488A','HP3488B','HP3488R','HP3499A','HP3499B','HP3499C']
 
         # check ID
         if not self._driver_operation_simulate:
             print(' checking identity')
             id = self.identity.instrument_model
-            id_check = self._instrument_id
-            id_short = id[:len(id_check)]
-            if id_short != id_check:
-                raise Exception("Instrument ID mismatch, expecting %s, got %s", id_check, id_short)
-            print('instrument id check: expecting {}, got {}'.format(id_check, id_short))
-            
+            if id not in self._identity_supported_instrument_models:
+                raise Exception("Instrument ID mismatch: got {}, expected one of {}.", id,
+                                self._identity_supported_instrument_models)
+            self._instrument_id = id
+            print('found supported instrument: {}'.format(self.identity.instrument_model))
+
+        self._load_cards()
         self._init_channels()
+        
         print('exit init()')
         return
-
-    # def initialize(self, resource = None, id_query = False, reset = False, **keywargs):
-    #     "Opens an I/O session to the instrument."
-    #     print('enter initialize() {}'.format())
-    #     #self._channel_count = self._analog_channel_count + self._digital_channel_count
-
-    #     super(agilent3488, self).initialize(resource, id_query, reset, **keywargs)
-
-    #     # interface clear
-    #     if not self._driver_operation_simulate:
-    #         self._clear()
-
-    #     # check ID
-    #     if id_query and not self._driver_operation_simulate:
-    #         id = self.identity.instrument_model
-    #         id_check = self._instrument_id
-    #         id_short = id[:len(id_check)]
-    #         if id_short != id_check:
-    #             raise Exception("Instrument ID mismatch, expecting %s, got %s", id_check, id_short)
-
-    #     # reset
-    #     if reset:
-    #         self.utility.reset()
-
-    #     print('exit initialize()')
-
-    #     return
 
     def _init_channels(self):
         print('enter init_channels()')
@@ -137,32 +102,6 @@ class agilent3488(ivi.Driver, swtch.Base):
         
         super()._init_channels()
 
-        self._slots = dict()
-
-        if self._identity_instrument_model == 'HP3488A':
-            for slot_id in range(1,6):
-                card = None
-                card_type = self._card_type_query(slot_id)
-                driver_setup = {'slot_id':slot_id, 'group_id':0}
-                if '00000' in card_type:
-                    card = None
-                elif '44470' in card_type:
-                    card = C44470(self._resource_string, driver_setup=driver_setup)
-                elif '44471' in card_type:
-                    card = None
-                elif '44472' in card_type:
-                    card = C44472(self._resource_string, driver_setup=driver_setup)
-                elif '44473' in card_type:
-                    card = None
-                else:
-                    card = None
-                    
-                self._slots[slot_id] = card
-                card_description = 'Empty'
-                if card:
-                    card_description = card.identity.description
-                print('slot {} contains {}'.format(slot_id, card_description))
-            
         self._channel_name = list()
         self._channel_label = list()
         # init per-channel instrument-specific variables
@@ -175,7 +114,37 @@ class agilent3488(ivi.Driver, swtch.Base):
         self.channels._set_list(self._channel_name)
 
         print('exit init_channels()')
+        return
+    
+    def _load_cards(self):
+        print('enter load_cards()')
+        
+        self._slots = dict()
+        for slot_id in range(1,6):
+            card_type = self._card_type_query(slot_id)
+            driver_setup = {'slot_id':slot_id, 'group_id':0}
+            if '00000' in card_type:
+                card = None
+            elif '44470' in card_type:
+                card = C44470(self._resource_string, driver_setup=driver_setup)
+            elif '44471' in card_type:
+                #card = C44471(self._resource_string, driver_setup=driver_setup)
+                card = None
+            elif '44472' in card_type:
+                card = C44472(self._resource_string, driver_setup=driver_setup)
+            elif '44473' in card_type:
+                card = None
+            else:
+                card = None
+                    
+            self._slots[slot_id] = card
+            card_description = 'Empty'
+            if card:
+                card_description = card.identity.description
 
+            print('slot {} contains {}'.format(slot_id, card_description))
+            
+        print('exit load_cards()')
         return
 
     
@@ -258,7 +227,7 @@ class agilent3488(ivi.Driver, swtch.Base):
             #error_code, error_message = self._ask("error").split(',')
             error_code = self._ask("ERROR")
             error_code = int(error_code)
-            merror_message = 'no message'
+            error_message = 'no message'
             #error_message = error_message.strip(' "')
         return (error_code, error_message)
 
@@ -296,21 +265,6 @@ class agilent3488(ivi.Driver, swtch.Base):
             self._write(":timebase:position %e" % value)
         self._acquisition_start_time = value
         self._set_cache_valid()
-
-    # more definitions
-    # def parse_channel_address(self, address_string):
-    #     if '!' not in address_string:
-    #         raise ValueError('malformed channel address: {}'.format(address_string))
-        
-    #     address = address_string.partition('!')
-    #     slot = address[0].strip().lower()
-    #     chan = address[2].strip().lower()
-    #     if int(slot) < 1 or int(slot) > 5:
-    #         raise swtch.InvalidSwitchPathException
-            
-    #     slot = int(slot)
-        
-    #     return slot, chan
 
     def parse_channel_address(self, address_string):
         addr = int(address_string)
