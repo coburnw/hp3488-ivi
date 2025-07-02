@@ -28,9 +28,9 @@ Very much a work in progress.
   
 ### Installation
 Using pip to install in editable mode seems the cleanest way to avoid pythons import troubles. Editable allows one to make changes to the repository and have them instantly available in their applicaton. As an aside, using pip install -e . works perfectly well for both python-ivi and the python-vxi11 repositories as well.
-    clone
-    cd into repository
-    pip install -e .
+  * clone
+  * cd into repository
+  * pip install -e .
 
 If pip refuses to install with an 'editable mode' error, see [here](https://stackoverflow.com/a/73779542) for upgrading pip.
 
