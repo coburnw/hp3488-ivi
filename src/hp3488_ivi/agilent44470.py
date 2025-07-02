@@ -3,7 +3,7 @@
 Python Interchangeable Virtual Instrument Library
 
 agilent44470.py
-Copyright (c) 2020 Coburn Wightman
+Copyright (c) 2017-2025 Coburn Wightman
 
 Derived from rigolDP800.py 
 Copyright (c) 2013-2017 Alex Forencich
@@ -118,38 +118,43 @@ class agilent44470(ivi.Driver, swtch.Base):
         self.channels._set_list(self._channel_name)
         return
 
+    def _name_to_address(self, channel_name):
+        channel_index = ivi.get_index(self._channel_name, channel_name)
+        channel_address = self._slot_id * 100 + self._group_id * 10 + channel_index
+
+        # if channel_index < self._channel_count - 1:
+
+        return channel_address
+        
     def _chan_connect(self, channel):
-            channel_index = ivi.get_index(self._channel_name, channel)
-            if channel_index < self._channel_count - 1:
-                #print('connecting ' + str(channel) + ' to ' + 'Common')
-                channel_address = self._slot_id * 100 + self._group_id * 10 + channel_index
+        #print('connecting ' + str(channel) + ' to ' + 'Common')
+        channel_address = self._name_to_address(channel)
 
-                if self._is_mux:
-                    cmd = ' CHAN' + str(channel_address)
-                else:
-                    cmd = ' CLOSE' + str(channel_address)
+        if self._is_mux:
+            cmd = ' CHAN' + str(channel_address)
+        else:
+            cmd = ' CLOSE' + str(channel_address)
                     
-                if self._driver_operation_simulate:
-                    print(cmd)
-                else:
-                    self._write(cmd)
+        if self._driver_operation_simulate:
+            print(cmd)
+        else:
+            self._write(cmd)
 
-            return
+        return
 
     def _chan_disconnect(self, channel):
-            channel_index = ivi.get_index(self._channel_name, channel)
-            if channel_index < self._channel_count - 1:
-                channel_address = self._slot_id * 100 + self._group_id * 10 + channel_index
+        channel_address = self._name_to_address(channel)
 
-                if self._is_mux:
-                    self._path_disconnect_all()
-                else:
-                    cmd = ' OPEN' + str(channel_address)
-                    if self._driver_operation_simulate:
-                        print(cmd)
-                    else:
-                        self._write(cmd)
-            return
+        if self._is_mux:
+            self._path_disconnect_all()
+        else:
+            cmd = ' OPEN' + str(channel_address)
+            if self._driver_operation_simulate:
+                print(cmd)
+            else:
+                self._write(cmd)
+            
+        return
         
     def _path_can_connect(self, channel1, channel2):
         # get_index will raise if channel invalid
@@ -160,30 +165,38 @@ class agilent44470(ivi.Driver, swtch.Base):
             raise swtch.CannotConnectToItselfException
         elif self._is_mux and (chan1 != self._channel_count-1) and (chan2 != self._channel_count-1):
             raise swtch.InvalidSwitchPathException("in mux mode, valid paths must contain a 'common' channel")
+        
         return True
 
     def _path_connect(self, channel1, channel2):
         if self._path_can_connect(channel1, channel2):
-            self._chan_connect(channel1)
-            self._chan_connect(channel2)
-            return
+            if 'com' not in channel1:
+                self._chan_connect(channel1)
+            if 'com' not in channel2:
+                self._chan_connect(channel2)
+            
+        return
 
     def _path_disconnect(self, channel1, channel2):
         self._chan_disconnect(channel1)
         self._chan_disconnect(channel2)
+        
         return
         
     def _path_disconnect_all(self):
         cmd = ' CRESET' + str(self._slot_id)
+        
         if self._driver_operation_simulate:
             print(cmd)
         else:
             self._write(cmd)
+            
         return
             
     def _path_get_path(self, channel1, channel2):
         channel1 = ivi.get_index(self._channel_name, channel1)
         channel2 = ivi.get_index(self._channel_name, channel2)
+
         return []
     
     def _path_set_path(self, path):

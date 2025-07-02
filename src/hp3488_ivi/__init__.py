@@ -4,7 +4,7 @@ Python Interchangeable Virtual Instrument Driver
 
 Copyright (c) 2012-2014 Alex Forencich
 
-Modified by Coburn Wightman 2020-2025
+Modified by Coburn Wightman 2017-2024
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,5 +27,6 @@ THE SOFTWARE.
 """
 
 # Contributed drivers
+from .agilent3488 import agilent3488
 from .agilent44470 import agilent44470
 from .agilent44472 import agilent44472
