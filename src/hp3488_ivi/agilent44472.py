@@ -32,20 +32,48 @@ import ivi
 from ivi import swtch
          
 class agilent44472(ivi.Driver, swtch.Base):
-    "Agilent HP44472 IVI VHF Mux Option Board"
+    "Agilent HP44472 IVI VHF Dual Mux Board"
     
     def __init__(self, *args, **kwargs):
         self.__dict__.setdefault('_instrument_id', '')
         
-        super(agilent44472, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
+
+        self._identity_description = "Agilent HP44472 Dual 4-Channel VHF Switch Module"
+        self._identity_identifier = ""
+        self._identity_revision = ""
+        self._identity_vendor = ""
+        self._identity_instrument_manufacturer = "Agilent"
+        self._identity_instrument_model = "HP44472"
+        self._identity_instrument_firmware_revision = ""
+        self._identity_specification_major_version = 3
+        self._identity_specification_minor_version = 0
+        self._identity_supported_instrument_models = ['HP44472']
 
         driver_setup = kwargs.get('driver_setup', dict())
         self._slot_id = driver_setup.get('slot_id', 1)
         
-        #self._group_id = driver_setup.get('group_id', 0)
-        #self._group_count = 2
+        self.groups = []
+        kwargs['driver_setup']['group_id'] = 0
+        self.groups.append(agilent44472Mux(*args, **kwargs))
+        kwargs['driver_setup']['group_id'] = 1
+        self.groups.append(agilent44472Mux(*args, **kwargs))
+        
+        return
 
-        self._identity_description = "Agilent HP44472 IVI VHF Mux driver"
+class agilent44472Mux(ivi.Driver, swtch.Base):
+    "Agilent HP44472 IVI VHF Mux Group"
+    
+    def __init__(self, *args, **kwargs):
+        self.__dict__.setdefault('_instrument_id', '')
+        
+        super().__init__(*args, **kwargs)
+
+        driver_setup = kwargs.get('driver_setup', dict())
+        self._slot_id = driver_setup.get('slot_id', 1)        
+        self._group_id = driver_setup.get('group_id', 0)
+
+        self._identity_description = "Agilent HP44472 4-Channel VHF Switch Group"
         self._identity_identifier = ""
         self._identity_revision = ""
         self._identity_vendor = ""
@@ -59,19 +87,18 @@ class agilent44472(ivi.Driver, swtch.Base):
         #self._init_channels()
         return
 
-    def _init_channels(self):
-        # 2 sections of 4 channels plus common
-        self._section_count = 2
-        self._section_channel_count = 4+1
 
-        self._channel_count = self._section_channel_count * self._section_count
+    def _init_channels(self):
+        self._channel_count = 4+1
 
         try:
-            super(agilent44472, self)._init_channels()
+            super()._init_channels()
         except AttributeError:
             pass
         
         self._channel_name = list()
+        self._channel_is_configuration_channel = list()
+        self._channel_is_source_channel = list()
         self._channel_characteristics_ac_current_carry_max = list()
         self._channel_characteristics_ac_current_switching_max = list()
         self._channel_characteristics_ac_power_carry_max = list()
@@ -84,66 +111,57 @@ class agilent44472(ivi.Driver, swtch.Base):
         self._channel_characteristics_dc_power_carry_max = list()
         self._channel_characteristics_dc_power_switching_max = list()
         self._channel_characteristics_dc_voltage_max = list()
-        self._channel_is_configuration_channel = list()
-        self._channel_is_source_channel = list()
         self._channel_characteristics_settling_time = list()
         self._channel_characteristics_wire_mode = list()
         
-        for section_index in range(self._section_count):
-            chan_start = self._section_channel_count * section_index
-            chan_end = self._section_channel_count + section_index * self._section_channel_count
-            for channel_index in range(self._section_channel_count):
-                self._channel_name.append('chan{}.{}'.format(section_index, channel_index))
-                self._channel_characteristics_ac_current_carry_max.append(0.1)
-                self._channel_characteristics_ac_current_switching_max.append(0.1)
-                self._channel_characteristics_ac_power_carry_max.append(1)
-                self._channel_characteristics_ac_power_switching_max.append(1)
-                self._channel_characteristics_ac_voltage_max.append(100)
-                self._channel_characteristics_bandwidth.append(100e6)
-                self._channel_characteristics_impedance.append(50)
-                self._channel_characteristics_dc_current_carry_max.append(0.1)
-                self._channel_characteristics_dc_current_switching_max.append(0.1)
-                self._channel_characteristics_dc_power_carry_max.append(1)
-                self._channel_characteristics_dc_power_switching_max.append(1)
-                self._channel_characteristics_dc_voltage_max.append(100)
-                self._channel_is_configuration_channel.append(False)
-                self._channel_is_source_channel.append(False)
-                self._channel_characteristics_settling_time.append(0.1)
-                self._channel_characteristics_wire_mode.append(2)
+        for channel_index in range(self._channel_count):
+            self._channel_name.append('chan{}'.format(channel_index))
+            self._channel_is_configuration_channel.append(False)
+            self._channel_is_source_channel.append(False)
+            self._channel_characteristics_ac_current_carry_max.append(0.1)
+            self._channel_characteristics_ac_current_switching_max.append(0.1)
+            self._channel_characteristics_ac_power_carry_max.append(1)
+            self._channel_characteristics_ac_power_switching_max.append(1)
+            self._channel_characteristics_ac_voltage_max.append(100)
+            self._channel_characteristics_bandwidth.append(100e6)
+            self._channel_characteristics_impedance.append(50)
+            self._channel_characteristics_dc_current_carry_max.append(0.1)
+            self._channel_characteristics_dc_current_switching_max.append(0.1)
+            self._channel_characteristics_dc_power_carry_max.append(1)
+            self._channel_characteristics_dc_power_switching_max.append(1)
+            self._channel_characteristics_dc_voltage_max.append(100)
+            self._channel_characteristics_settling_time.append(0.1)
+            self._channel_characteristics_wire_mode.append(2)
 
-            self._channel_name[chan_end-1] = 'chan{}.com'.format(section_index)
-            self._channel_is_configuration_channel[channel_index] = True
+        # convert last channel to mux common
+        self._channel_name[channel_index] = 'com'
+        self._channel_is_configuration_channel[channel_index] = True
         
         self.channels._set_list(self._channel_name)    
         return
 
     def _name_to_address(self, channel_name):
-        channel_index = ivi.get_index(self._channel_name, channel)
-        section_index = channel_index // self._section_channel_count
-
-        # if channel_index < self._section_channel_count:
-        #     section_address = 0
-        # else:
-        #     section_address = 10
-        #     channel_index -= self._section_channel_count
-
-        channel_address = self._slot_id*100 + section_index*10 + channel_index
-        return chan_addr
+        channel_index = ivi.get_index(self._channel_name, channel_name)
+        channel_address = self._slot_id*100 + self._group_id*10 + channel_index
+        
+        return channel_address
         
     def _chan_connect(self, channel_name):
         channel_address = self._name_to_address(channel_name)
-        
-        if 'com' not in channel.lower():
+
+        # com channel is always connected.  quietly ignore
+        if 'com' not in channel_name.lower():
             print('connecting {} to Common'.format(channel_address))
             cmd = ' CLOSE' + str(channel_address)
             self._write(cmd)
 
         return
 
-    def _chan_disconnect(self, channel):
+    def _chan_disconnect(self, channel_name):
         channel_address = self._name_to_address(channel_name)
 
-        if 'com' not in channel.lower():
+        # com channel is always connected.  quietly ignore
+        if 'com' not in channel_name.lower():
             print('disconnecting ' + str(channel_address) + ' from ' + 'Common')
             cmd = ' OPEN' + str(channel_address)
             self._write(cmd)
