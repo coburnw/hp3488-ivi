@@ -32,24 +32,17 @@ import ivi
 from ivi import swtch
          
 class agilent44470(ivi.Driver, swtch.Base):
-    '''Agilent HP44470 IVI 10 Channel Mux Option Board'''
+    '''Agilent HP44470 IVI 10 Channel Mux Board'''
     
     def __init__(self, *args, **kwargs):
-        
         self.__dict__.setdefault('_instrument_id', '')
 
-        super(agilent44470, self).__init__(*args, **kwargs)
+        # python-vxi11 doesnt like the 'slot' in the resource string.
+        # extract it and clean up the resource string before ivi.Driver.init() 
+        self._slot_id, args = self._extract_slot_id(args)
+        super().__init__(*args, **kwargs)
         
-        driver_setup = kwargs.get('driver_setup', dict())
-        self._slot_id = driver_setup.get('slot_id', 1)
-        self._group_id = driver_setup.get('group_id', 0)
-        self._is_mux = driver_setup.get('is_mux', True)
-        
-        # ten channels plus common
-        # define this in _init_channels() as ivi swtch.base seems to overwrite it.
-        #self._channel_count = 10+1
-
-        self._identity_description = "Agilent HP44470 IVI 10 Channel Mux driver"
+        self._identity_description = "Agilent HP44470 Ten Channel Mux Board"
         self._identity_identifier = ""
         self._identity_revision = ""
         self._identity_vendor = ""
@@ -60,15 +53,57 @@ class agilent44470(ivi.Driver, swtch.Base):
         self._identity_specification_minor_version = 0
         self._identity_supported_instrument_models = ['HP44470']
         
+        if 'driver_setup' not in kwargs.keys():
+            kwargs['driver_setup'] = dict()
+
+        self.groups = []
+        kwargs['driver_setup']['group_id'] = 0
+        self.groups.append(Agilent44470Mux(*args, **kwargs))
+
+        return
+
+    def _extract_slot_id(self, args): # args is a tuple
+        lst = list(args)
+
+        idx = lst[0].rfind('slot')
+        slot_id = lst[0][idx+len('slot')]
+        lst[0] = lst[0].replace('slot{}::'.format(slot_id), '')
+
+        args = tuple(lst)
+        return slot_id, args
+    
+    
+class Agilent44470Mux(ivi.Driver, swtch.Base):
+    '''Agilent HP44470 IVI 10 Channel Mux Section'''
+    
+    def __init__(self, *args, **kwargs):
+        self.__dict__.setdefault('_instrument_id', '')
+        super().__init__(*args, **kwargs)
+
+        self._identity_description = "Agilent HP44470 Ten Channel Mux Section"
+        self._identity_identifier = ""
+        self._identity_revision = ""
+        self._identity_vendor = ""
+        self._identity_instrument_manufacturer = "Agilent"
+        self._identity_instrument_model = "HP44470"
+        self._identity_instrument_firmware_revision = ""
+        self._identity_specification_major_version = 3
+        self._identity_specification_minor_version = 0
+        self._identity_supported_instrument_models = ['HP44470']
+        
+        self._group_id = 0
+        driver_setup = kwargs.get('driver_setup', dict())
+        self._slot_id = driver_setup.get('slot_id', 1)
+        self._is_mux = driver_setup.get('is_mux', True)
+        
         return
 
     def _init_channels(self):
-
         # ten channels plus common
         self._channel_count = 10+1
         
         try:
-            super(agilent44470, self)._init_channels()
+            super()._init_channels()
         except AttributeError:
             pass
         
@@ -93,7 +128,7 @@ class agilent44470(ivi.Driver, swtch.Base):
         #print('adding {} channels'.format(self._channel_count))
         for i in range(self._channel_count):
             #print('adding channel {}'.format(i))
-            self._channel_name.append("channel%d" % (i))
+            self._channel_name.append("chan%d" % (i))
             self._channel_characteristics_ac_current_carry_max.append(0.1)
             self._channel_characteristics_ac_current_switching_max.append(0.1)
             self._channel_characteristics_ac_power_carry_max.append(1)
@@ -112,7 +147,7 @@ class agilent44470(ivi.Driver, swtch.Base):
             self._channel_characteristics_wire_mode.append(2)
 
         #print(' converting channel {} to common'.format(i))
-        self._channel_name[i] = 'common'
+        self._channel_name[i] = 'com'
         self._channel_is_configuration_channel[i] = True
         
         self.channels._set_list(self._channel_name)
@@ -121,8 +156,6 @@ class agilent44470(ivi.Driver, swtch.Base):
     def _name_to_address(self, channel_name):
         channel_index = ivi.get_index(self._channel_name, channel_name)
         channel_address = self._slot_id * 100 + self._group_id * 10 + channel_index
-
-        # if channel_index < self._channel_count - 1:
 
         return channel_address
         

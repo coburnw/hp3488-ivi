@@ -121,17 +121,18 @@ class agilent3488(ivi.Driver, swtch.Base):
         
         self._slots = dict()
         for slot_id in range(1,6):
+            slot_resource_string = self._append_slot_id(self._resource_string, slot_id)
+            
             card_type = self._card_type_query(slot_id)
-            driver_setup = {'slot_id':slot_id, 'group_id':0}
             if '00000' in card_type:
                 card = None
             elif '44470' in card_type:
-                card = C44470(self._resource_string, driver_setup=driver_setup)
+                card = C44470(slot_resource_string)
             elif '44471' in card_type:
-                #card = C44471(self._resource_string, driver_setup=driver_setup)
+                #card = C44471(slot_resource_string)
                 card = None
             elif '44472' in card_type:
-                card = C44472(self._resource_string, driver_setup=driver_setup)
+                card = C44472(slot_resource_string)
             elif '44473' in card_type:
                 card = None
             else:
@@ -147,7 +148,14 @@ class agilent3488(ivi.Driver, swtch.Base):
         print('exit load_cards()')
         return
 
-    
+    def _append_slot_id(self, resource_string, slot_id):
+        idx = resource_string.find('::INSTR')
+        if idx > 0:
+            resource_string = '{}::slot{}{}'.format(resource_string[:idx], slot_id, resource_string[idx:])
+
+        #print(resource_string)
+        return resource_string
+
     def _load_id_string(self):
         print('  load_id_string()')
         if self._driver_operation_simulate:
@@ -188,7 +196,7 @@ class agilent3488(ivi.Driver, swtch.Base):
         return self._identity_instrument_firmware_revision
 
     def _card_type_query(self, slot):
-        print ('  enter get_identity_slot_card_type()')
+        print ('  enter _card_type_query()')
         card_type = 'No card in simulate mode'
         if not self._driver_operation_simulate:
             cmd = 'CTYPE {}'.format(slot)
@@ -210,6 +218,12 @@ class agilent3488(ivi.Driver, swtch.Base):
         cmd = 'CMON {}'.format(slot)
         self._write(cmd)
         return
+
+    def get_card_function(self, slot_index, function_index, driver_options):
+        function = self.slots[slot_index][function_index]
+        function.set_driver_options(driver_options)
+        
+        return function
     
     def _utility_disable(self):
         pass
