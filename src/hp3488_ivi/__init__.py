@@ -27,6 +27,7 @@ THE SOFTWARE.
 """
 
 # Contributed drivers
-from .agilent3488 import agilent3488
-from .agilent44470 import agilent44470
-from .agilent44472 import agilent44472
+from .agilent3488 import Agilent3488
+from .agilent3488 import Agilent3488_Plugin
+from .agilent44470 import Agilent44470
+from .agilent44472 import Agilent44472

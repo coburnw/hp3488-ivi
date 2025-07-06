@@ -30,19 +30,15 @@ THE SOFTWARE.
 
 import ivi
 from ivi import swtch
-         
-class agilent44472(ivi.Driver, swtch.Base):
-    "Agilent HP44472 IVI VHF Dual Mux Board"
+from .agilent3488 import Agilent3488_Plugin
+    
+class Agilent44472(Agilent3488_Plugin):
+    "Agilent HP44472 IVI VHF Dual Mux Plug-in Board"
     
     def __init__(self, *args, **kwargs):
-        self.__dict__.setdefault('_instrument_id', '')
-
-        # python-vxi11 doesnt like the 'slot' in the resource string.
-        # extract it and clean up the resource string before ivi.Driver.init() 
-        self._slot_id, args = self._extract_slot_id(args)
         super().__init__(*args, **kwargs)
 
-        self._identity_description = "Agilent HP44472 Dual 4-Channel VHF Switch Module"
+        self._identity_description = "Agilent HP44472 Dual 4-Channel VHF Switch Module, Group {}".format(self.group_id)
         self._identity_identifier = ""
         self._identity_revision = ""
         self._identity_vendor = ""
@@ -55,48 +51,6 @@ class agilent44472(ivi.Driver, swtch.Base):
 
         if 'driver_setup' not in kwargs.keys():
             kwargs['driver_setup'] = dict()
-            
-        self.groups = []
-        kwargs['driver_setup']['group_id'] = 0
-        self.groups.append(Agilent44472Mux(*args, **kwargs))
-        kwargs['driver_setup']['group_id'] = 1
-        self.groups.append(Agilent44472Mux(*args, **kwargs))
-        
-        return
-
-    def _extract_slot_id(self, args): # args is a tuple
-        # converts args to a list, extracts the slotid, returns a sanatized tuple
-        lst = list(args)
-
-        idx = lst[0].rfind('slot')
-        slot_id = lst[0][idx+len('slot')]
-        lst[0] = lst[0].replace('slot{}::'.format(slot_id), '')
-
-        args = tuple(lst)
-        return slot_id, args
-    
-    
-class Agilent44472Mux(ivi.Driver, swtch.Base):
-    "Agilent HP44472 IVI VHF Mux Group"
-    
-    def __init__(self, *args, **kwargs):
-        self.__dict__.setdefault('_instrument_id', '')        
-        super().__init__(*args, **kwargs)
-
-        self._identity_description = "Agilent HP44472 4-Channel VHF Switch Group"
-        self._identity_identifier = ""
-        self._identity_revision = ""
-        self._identity_vendor = ""
-        self._identity_instrument_manufacturer = "Agilent"
-        self._identity_instrument_model = "HP44472"
-        self._identity_instrument_firmware_revision = ""
-        self._identity_specification_major_version = 3
-        self._identity_specification_minor_version = 0
-        self._identity_supported_instrument_models = ['HP44472']
-        
-        driver_setup = kwargs.get('driver_setup', dict())
-        self._slot_id = driver_setup.get('slot_id', 1)        
-        self._group_id = driver_setup.get('group_id', 0)
 
         return
 
@@ -152,12 +106,9 @@ class Agilent44472Mux(ivi.Driver, swtch.Base):
         self.channels._set_list(self._channel_name)    
         return
 
-    def set_driver_options(self, **kwargs):
-        pass
-    
     def _name_to_address(self, channel_name):
         channel_index = ivi.get_index(self._channel_name, channel_name)
-        channel_address = self._slot_id*100 + self._group_id*10 + channel_index
+        channel_address = self.slot_id*100 + self.group_id*10 + channel_index
         
         return channel_address
         
@@ -208,19 +159,11 @@ class Agilent44472Mux(ivi.Driver, swtch.Base):
         return
         
     def _path_disconnect_all(self):
-        cmd = ' CRESET' + str(self._slot_id)
+        cmd = ' CRESET' + str(self.slot_id)
         if self._driver_operation_simulate:
             print(cmd)
         else:
             self._write(cmd)
             
-    def _path_get_path(self, channel1, channel2):
-        channel1 = ivi.get_index(self._channel_name, channel1)
-        channel2 = ivi.get_index(self._channel_name, channel2)
-        return []
-    
-    def _path_set_path(self, path):
-        pass
-    
     def _path_wait_for_debounce(self, maximum_time):
         pass

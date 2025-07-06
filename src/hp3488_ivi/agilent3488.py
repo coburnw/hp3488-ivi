@@ -33,18 +33,70 @@ import struct
 import ivi
 from ivi import swtch
 
-from .agilent44470 import agilent44470 as C44470
-#from .agilent44471 import agilent44471 as C44471
-from .agilent44472 import agilent44472 as C44472
+#from .agilent44470 import Agilent44470 as C44470
+#from .agilent44471 import Agilent44471 as C44471
+#from .agilent44472 import Agilent44472 as C44472
 
-AcquisitionTypeMapping = {
-        'normal': 'norm',
-        'peak_detect': 'peak',
-        'high_resolution': 'hres',
-        'average': 'aver'}
-# more instrument-specific sets and mappings
 
-class agilent3488(ivi.Driver, swtch.Base):
+class Agilent3488_Plugin(ivi.Driver, swtch.Base):
+    ''' Base class for Agilent 3488/3499 Plug-in boards '''
+    def __init__(self, *args, **kwargs):
+        self.__dict__.setdefault('_instrument_id', '')
+
+        # python-vxi11 doesnt like 'slot' in the resource string.
+        # extract it and clean up the resource string 
+        resource_string = args[0]
+        self._slot_id, self._group_id, resource_string = self._extract_slot_params(resource_string)
+        print(self._slot_id, self._group_id, resource_string)
+
+        #replace resource_string with sanitized version
+        lst = list(args)
+        lst[0] = resource_string
+        args = tuple(lst)
+        
+        super().__init__(*args, **kwargs)
+
+        if 'driver_setup' not in kwargs.keys():
+            kwargs['driver_setup'] = dict()
+
+        self._driver_setup = kwargs['driver_setup']
+        
+        return
+
+    def _extract_slot_params(self, resource_string):
+        slot_id = 0
+        group_id = 0
+        
+        # extracts the slotid from args list, returns a sanatized tuple
+        segments = resource_string.split('::')
+        rsc = ''
+        for segment in segments:
+            if 'slot' in segment:
+                slot_params = segment.strip(':').split(',')
+                if len(slot_params) > 0:
+                    slot_id = int(slot_params[0].replace('slot', ''))
+                if len(slot_params) > 1:
+                    group_id = int(slot_params[1].replace('group', ''))
+                segment = ''
+            else:
+                rsc += segment + '::'
+
+        resource_string = rsc.rstrip(':')
+        return slot_id, group_id, resource_string
+
+    @property
+    def slot_id(self):
+        return self._slot_id
+
+    @property
+    def group_id(self):
+        return self._group_id
+
+    @property
+    def driver_setup(self):
+        return self._driver_setup
+    
+class Agilent3488(ivi.Driver, swtch.Base):
     "Agilent HP3488 Switch driver"
 
     def __init__(self, *args, **kwargs):
@@ -88,8 +140,8 @@ class agilent3488(ivi.Driver, swtch.Base):
             self._instrument_id = id
             print('found supported instrument: {}'.format(self.identity.instrument_model))
 
-        self._load_cards()
-        self._init_channels()
+        #self._load_cards()    # discover installed cards
+        #self._init_channels() # build database of possible connection endpoints
         
         print('exit init()')
         return
@@ -104,57 +156,43 @@ class agilent3488(ivi.Driver, swtch.Base):
 
         self._channel_name = list()
         self._channel_label = list()
-        # init per-channel instrument-specific variables
-
-        # for i in range(self._channel_count):
-        #     self._channel_name.append("channel%d" % (i+1))
-        #     self._channel_label.append("%d" % (i+1))
-        #     # init per-channel instrument-specific variables
 
         self.channels._set_list(self._channel_name)
 
         print('exit init_channels()')
         return
     
-    def _load_cards(self):
-        print('enter load_cards()')
+    # def _load_cards(self):
+    #     print('enter load_cards()')
         
-        self._slots = dict()
-        for slot_id in range(1,6):
-            slot_resource_string = self._append_slot_id(self._resource_string, slot_id)
+    #     self._slots = dict()
+    #     for slot_id in range(1,6):
+    #         slot_resource_string = self._append_slot_id(self._resource_string, slot_id)
             
-            card_type = self._card_type_query(slot_id)
-            if '00000' in card_type:
-                card = None
-            elif '44470' in card_type:
-                card = C44470(slot_resource_string)
-            elif '44471' in card_type:
-                #card = C44471(slot_resource_string)
-                card = None
-            elif '44472' in card_type:
-                card = C44472(slot_resource_string)
-            elif '44473' in card_type:
-                card = None
-            else:
-                card = None
+    #         card_type = self._card_type_query(slot_id)
+    #         if '00000' in card_type:
+    #             card = None
+    #         elif '44470' in card_type:
+    #             card = C44470(slot_resource_string)
+    #         elif '44471' in card_type:
+    #             #card = C44471(slot_resource_string)
+    #             card = None
+    #         elif '44472' in card_type:
+    #             card = C44472(slot_resource_string)
+    #         elif '44473' in card_type:
+    #             card = None
+    #         else:
+    #             card = None
                     
-            self._slots[slot_id] = card
-            card_description = 'Empty'
-            if card:
-                card_description = card.identity.description
+    #         self._slots[slot_id] = card
+    #         card_description = 'Empty'
+    #         if card:
+    #             card_description = card.identity.description
 
-            print('slot {} contains {}'.format(slot_id, card_description))
+    #         print('slot {} contains {}'.format(slot_id, card_description))
             
-        print('exit load_cards()')
-        return
-
-    def _append_slot_id(self, resource_string, slot_id):
-        idx = resource_string.find('::INSTR')
-        if idx > 0:
-            resource_string = '{}::slot{}{}'.format(resource_string[:idx], slot_id, resource_string[idx:])
-
-        #print(resource_string)
-        return resource_string
+    #     print('exit load_cards()')
+    #     return
 
     def _load_id_string(self):
         print('  load_id_string()')
@@ -289,7 +327,8 @@ class agilent3488(ivi.Driver, swtch.Base):
             
         chan = addr - slot * 100
         return slot, chan
-        
+
+    # between board paths
     def _path_can_connect(self, channel_a, channel_b):
         # get_index will raise if channel invalid
         slot_a, chan_a = self.parse_channel_address(channel_a)
@@ -311,3 +350,13 @@ class agilent3488(ivi.Driver, swtch.Base):
             card.path.connect(chan_a, chan_b)
 
         return
+
+    def _path_get_path(self, channel1, channel2):
+        # channel1 = ivi.get_index(self._channel_name, channel1)
+        # channel2 = ivi.get_index(self._channel_name, channel2)
+
+        return []
+    
+    def _path_set_path(self, path):
+        pass
+    

@@ -30,16 +30,12 @@ THE SOFTWARE.
 
 import ivi
 from ivi import swtch
+from .agilent3488 import Agilent3488_Plugin
          
-class agilent44470(ivi.Driver, swtch.Base):
+class Agilent44470(Agilent3488_Plugin):
     '''Agilent HP44470 IVI 10 Channel Mux Board'''
     
     def __init__(self, *args, **kwargs):
-        self.__dict__.setdefault('_instrument_id', '')
-
-        # python-vxi11 doesnt like the 'slot' in the resource string.
-        # extract it and clean up the resource string before ivi.Driver.init() 
-        self._slot_id, args = self._extract_slot_id(args)
         super().__init__(*args, **kwargs)
         
         self._identity_description = "Agilent HP44470 Ten Channel Mux Board"
@@ -53,49 +49,9 @@ class agilent44470(ivi.Driver, swtch.Base):
         self._identity_specification_minor_version = 0
         self._identity_supported_instrument_models = ['HP44470']
         
-        if 'driver_setup' not in kwargs.keys():
-            kwargs['driver_setup'] = dict()
+        if 'is_mux' not in self.driver_setup:
+            self.driver_setup['is_mux'] = True
 
-        self.groups = []
-        kwargs['driver_setup']['group_id'] = 0
-        self.groups.append(Agilent44470Mux(*args, **kwargs))
-
-        return
-
-    def _extract_slot_id(self, args): # args is a tuple
-        lst = list(args)
-
-        idx = lst[0].rfind('slot')
-        slot_id = lst[0][idx+len('slot')]
-        lst[0] = lst[0].replace('slot{}::'.format(slot_id), '')
-
-        args = tuple(lst)
-        return slot_id, args
-    
-    
-class Agilent44470Mux(ivi.Driver, swtch.Base):
-    '''Agilent HP44470 IVI 10 Channel Mux Section'''
-    
-    def __init__(self, *args, **kwargs):
-        self.__dict__.setdefault('_instrument_id', '')
-        super().__init__(*args, **kwargs)
-
-        self._identity_description = "Agilent HP44470 Ten Channel Mux Section"
-        self._identity_identifier = ""
-        self._identity_revision = ""
-        self._identity_vendor = ""
-        self._identity_instrument_manufacturer = "Agilent"
-        self._identity_instrument_model = "HP44470"
-        self._identity_instrument_firmware_revision = ""
-        self._identity_specification_major_version = 3
-        self._identity_specification_minor_version = 0
-        self._identity_supported_instrument_models = ['HP44470']
-        
-        self._group_id = 0
-        driver_setup = kwargs.get('driver_setup', dict())
-        self._slot_id = driver_setup.get('slot_id', 1)
-        self._is_mux = driver_setup.get('is_mux', True)
-        
         return
 
     def _init_channels(self):
@@ -163,7 +119,7 @@ class Agilent44470Mux(ivi.Driver, swtch.Base):
         #print('connecting ' + str(channel) + ' to ' + 'Common')
         channel_address = self._name_to_address(channel)
 
-        if self._is_mux:
+        if self.driver_setup['is_mux']:
             cmd = ' CHAN' + str(channel_address)
         else:
             cmd = ' CLOSE' + str(channel_address)
@@ -178,7 +134,7 @@ class Agilent44470Mux(ivi.Driver, swtch.Base):
     def _chan_disconnect(self, channel):
         channel_address = self._name_to_address(channel)
 
-        if self._is_mux:
+        if self.driver_setup['is_mux']:
             self._path_disconnect_all()
         else:
             cmd = ' OPEN' + str(channel_address)
@@ -196,7 +152,7 @@ class Agilent44470Mux(ivi.Driver, swtch.Base):
         
         if chan1 == chan2:
             raise swtch.CannotConnectToItselfException
-        elif self._is_mux and (chan1 != self._channel_count-1) and (chan2 != self._channel_count-1):
+        elif self.driver_setup['is_mux'] and (chan1 != self._channel_count-1) and (chan2 != self._channel_count-1):
             raise swtch.InvalidSwitchPathException("in mux mode, valid paths must contain a 'common' channel")
         
         return True
@@ -226,14 +182,5 @@ class Agilent44470Mux(ivi.Driver, swtch.Base):
             
         return
             
-    def _path_get_path(self, channel1, channel2):
-        channel1 = ivi.get_index(self._channel_name, channel1)
-        channel2 = ivi.get_index(self._channel_name, channel2)
-
-        return []
-    
-    def _path_set_path(self, path):
-        pass
-    
     def _path_wait_for_debounce(self, maximum_time):
         pass
