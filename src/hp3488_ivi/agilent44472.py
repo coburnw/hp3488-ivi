@@ -49,13 +49,19 @@ class Agilent44472(Agilent3488_Plugin):
         self._identity_specification_minor_version = 0
         self._identity_supported_instrument_models = ['HP44472']
 
+        if self.group_id < 0 or self.group_id > 1:
+            raise ivi.OutOfRangeException('device contains only two switch groups (group0,group1)')
+        
         if 'driver_setup' not in kwargs.keys():
             kwargs['driver_setup'] = dict()
 
+        self._load_identity()
+        
         return
 
     def _init_channels(self):
-        self._channel_count = 4+1
+        # our switch group has 4 channels plus a common
+        self._channel_count = 4
 
         try:
             super()._init_channels()
@@ -79,25 +85,26 @@ class Agilent44472(Agilent3488_Plugin):
         self._channel_characteristics_dc_voltage_max = list()
         self._channel_characteristics_settling_time = list()
         self._channel_characteristics_wire_mode = list()
-        
-        for channel_index in range(self._channel_count):
+
+        # configure channel_count+com channels 
+        for channel_index in range(self._channel_count+1):
             self._channel_name.append('chan{}'.format(channel_index))
             self._channel_is_configuration_channel.append(False)
             self._channel_is_source_channel.append(False)
             self._channel_characteristics_ac_current_carry_max.append(0.1)
             self._channel_characteristics_ac_current_switching_max.append(0.1)
-            self._channel_characteristics_ac_power_carry_max.append(1)
+            self._channel_characteristics_ac_power_carry_max.append(0.3)
             self._channel_characteristics_ac_power_switching_max.append(1)
-            self._channel_characteristics_ac_voltage_max.append(100)
-            self._channel_characteristics_bandwidth.append(100e6)
+            self._channel_characteristics_ac_voltage_max.append(30)
+            self._channel_characteristics_bandwidth.append(300e6)
             self._channel_characteristics_impedance.append(50)
-            self._channel_characteristics_dc_current_carry_max.append(0.1)
-            self._channel_characteristics_dc_current_switching_max.append(0.1)
-            self._channel_characteristics_dc_power_carry_max.append(1)
-            self._channel_characteristics_dc_power_switching_max.append(1)
-            self._channel_characteristics_dc_voltage_max.append(100)
+            self._channel_characteristics_dc_current_carry_max.append(0.03)
+            self._channel_characteristics_dc_current_switching_max.append(0.03)
+            self._channel_characteristics_dc_power_carry_max.append(0.1)
+            self._channel_characteristics_dc_power_switching_max.append(0.1)
+            self._channel_characteristics_dc_voltage_max.append(250)
             self._channel_characteristics_settling_time.append(0.1)
-            self._channel_characteristics_wire_mode.append(2)
+            self._channel_characteristics_wire_mode.append(1)
 
         # convert last channel to mux common
         self._channel_name[channel_index] = 'com'

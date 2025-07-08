@@ -36,9 +36,12 @@ class Agilent44470(Agilent3488_Plugin):
     '''Agilent HP44470 IVI 10 Channel Mux Board'''
     
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        # hide a definition of supported models from ivi
+        self.__dict__.setdefault('_driver_supported_models', ['44470'])
         
-        self._identity_description = "Agilent HP44470 Ten Channel Mux Board"
+        super().__init__(*args, **kwargs)
+
+        self._identity_description = "Agilent HP44470 Ten Channel Mux Board, Group 0"
         self._identity_identifier = ""
         self._identity_revision = ""
         self._identity_vendor = ""
@@ -47,16 +50,21 @@ class Agilent44470(Agilent3488_Plugin):
         self._identity_instrument_firmware_revision = ""
         self._identity_specification_major_version = 3
         self._identity_specification_minor_version = 0
-        self._identity_supported_instrument_models = ['HP44470']
+        self._identity_supported_instrument_models = self._driver_supported_models
         
         if 'is_mux' not in self.driver_setup:
             self.driver_setup['is_mux'] = True
 
+        if self.group_id < 0 or self.group_id > 0:
+            raise ivi.OutOfRangeException('device contains only one switch group (group0)')
+
+        self._load_identity()
+
         return
 
     def _init_channels(self):
-        # ten channels plus common
-        self._channel_count = 10+1
+        # our switch group has ten channels plus a common
+        self._channel_count = 10
         
         try:
             super()._init_channels()
@@ -82,21 +90,22 @@ class Agilent44470(Agilent3488_Plugin):
         self._channel_characteristics_wire_mode = list()
 
         #print('adding {} channels'.format(self._channel_count))
-        for i in range(self._channel_count):
+        # configure channel_count+com channels 
+        for i in range(self._channel_count+1):
             #print('adding channel {}'.format(i))
             self._channel_name.append("chan%d" % (i))
-            self._channel_characteristics_ac_current_carry_max.append(0.1)
+            self._channel_characteristics_ac_current_carry_max.append(2.0)
             self._channel_characteristics_ac_current_switching_max.append(0.1)
-            self._channel_characteristics_ac_power_carry_max.append(1)
+            self._channel_characteristics_ac_power_carry_max.append(500)
             self._channel_characteristics_ac_power_switching_max.append(1)
-            self._channel_characteristics_ac_voltage_max.append(100)
-            self._channel_characteristics_bandwidth.append(1e6)
+            self._channel_characteristics_ac_voltage_max.append(250)
+            self._channel_characteristics_bandwidth.append(10e6)
             self._channel_characteristics_impedance.append(50)
-            self._channel_characteristics_dc_current_carry_max.append(0.1)
+            self._channel_characteristics_dc_current_carry_max.append(2.0)
             self._channel_characteristics_dc_current_switching_max.append(0.1)
-            self._channel_characteristics_dc_power_carry_max.append(1)
+            self._channel_characteristics_dc_power_carry_max.append(60)
             self._channel_characteristics_dc_power_switching_max.append(1)
-            self._channel_characteristics_dc_voltage_max.append(100)
+            self._channel_characteristics_dc_voltage_max.append(250)
             self._channel_is_configuration_channel.append(False)
             self._channel_is_source_channel.append(False)
             self._channel_characteristics_settling_time.append(0.1)
@@ -111,7 +120,7 @@ class Agilent44470(Agilent3488_Plugin):
 
     def _name_to_address(self, channel_name):
         channel_index = ivi.get_index(self._channel_name, channel_name)
-        channel_address = self._slot_id * 100 + self._group_id * 10 + channel_index
+        channel_address = self.slot_id * 100 + self.group_id * 10 + channel_index
 
         return channel_address
         
@@ -152,7 +161,7 @@ class Agilent44470(Agilent3488_Plugin):
         
         if chan1 == chan2:
             raise swtch.CannotConnectToItselfException
-        elif self.driver_setup['is_mux'] and (chan1 != self._channel_count-1) and (chan2 != self._channel_count-1):
+        elif self.driver_setup['is_mux'] and (chan1 != self._channel_count) and (chan2 != self._channel_count):
             raise swtch.InvalidSwitchPathException("in mux mode, valid paths must contain a 'common' channel")
         
         return True
@@ -173,7 +182,7 @@ class Agilent44470(Agilent3488_Plugin):
         return
         
     def _path_disconnect_all(self):
-        cmd = ' CRESET' + str(self._slot_id)
+        cmd = ' CRESET' + str(self.slot_id)
         
         if self._driver_operation_simulate:
             print(cmd)

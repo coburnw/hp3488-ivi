@@ -19,8 +19,9 @@ def printstate():
 
 if __name__ == '__main__':
 
-    rack = Agilent3488("TCPIP0::192.168.2.9::gpib0,9::INSTR")
-    print(rack.identity.instrument_model)
+    rack = Agilent3488("TCPIP0::192.168.2.9::gpib0,9::INSTR", id_query=True)
+    print('model', rack.identity.instrument_model)
+    print('desc', rack.identity.description)
     rack.utility.reset()
     rack.utility.self_test()
 
@@ -28,12 +29,28 @@ if __name__ == '__main__':
     
     # single group card
     rack._card_monitor('4')
+
+    # driver setup keyword/values
     driver_setup = dict()
-    mux = Agilent44470("TCPIP0::192.168.2.9::gpib0,9::slot4,group1::INSTR", driver_setup=driver_setup)
-    print(mux.identity.instrument_model)
+    # configure switch as a buss.
+    driver_setup['slot_id'] = 4
+    driver_setup['group_id'] = 0
+    driver_setup['is_mux'] = False
+
+    mux = Agilent44470("TCPIP0::192.168.2.9::gpib0,9::INSTR", id_query=True, driver_setup=driver_setup)
+    
+    print('model', mux.identity.instrument_model)
+    print('desc', mux.identity.description)
     for i in range(mux._channel_count):
         print(mux.channels[i].name)
 
+    # use switch as a buss
+    mux.path.connect('chan3', 'chan4')
+
+    # reconfigure switch as a mux
+    mux.driver_setup['is_mux'] = True
+
+    # mux
     mux.path.connect('chan3', 'com')
     time.sleep(0.5)
     mux.path.connect('chan4', 'com')
@@ -45,13 +62,24 @@ if __name__ == '__main__':
     print()
     
     # multi group card
-    rack._card_monitor('1')
-    mux0 = Agilent44472("TCPIP0::192.168.2.9::gpib0,9::slot1,group0::INSTR", driver_setup=driver_setup)
-    mux1 = Agilent44472("TCPIP0::192.168.2.9::gpib0,9::slot1,group1::INSTR", driver_setup=driver_setup)
-    print(mux0.identity.description)
+    #rack._card_monitor('1')
+
+    # use default driver setup values
+    driver_setup = dict()
+    driver_setup['slot_id'] = 1
+    driver_setup['group_id'] = 0
+    mux0 = Agilent44472("TCPIP0::192.168.2.9::gpib0,9::INSTR", driver_setup=driver_setup)
+    print('model', mux0.identity.instrument_model)
+    print('desc', mux0.identity.description)
     
-    for i in range(mux0._channel_count):
-        print(mux0.channels[i].name)
+    driver_setup['slot_id'] = 1
+    driver_setup['group_id'] = 1
+    mux1 = Agilent44472("TCPIP0::192.168.2.9::gpib0,9::INSTR", driver_setup=driver_setup)
+    print('model', mux1.identity.instrument_model)
+    print('desc', mux1.identity.description)
+    
+    for i in range(mux1._channel_count):
+        print(mux1.channels[i].name)
 
     mux0.path.connect('chan2', 'com')
     mux1.path.connect('chan1', 'com')
