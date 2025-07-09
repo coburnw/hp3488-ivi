@@ -56,7 +56,7 @@ class Agilent44472(Agilent34xx_Plugin):
             raise ivi.OutOfRangeException('device contains only two switch groups (group0,group1)')
 
         self._load_identity()
-        print(self.protocol)
+        #print(self.protocol)
         
         return
 

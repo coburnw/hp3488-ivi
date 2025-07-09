@@ -49,7 +49,9 @@ class Agilent34xx_Driver(ivi.Driver): #, swtch.Base
         #     print('popping ', self.protocol)
 
         super().__init__(*args, **kwargs)
-        print('driver operation simulate = {}'.format(self._driver_operation_simulate))
+        
+        if self._driver_operation_simulate:
+            print('driver operation simulate = {}'.format(self._driver_operation_simulate))
 
         return
     
@@ -382,29 +384,10 @@ class Agilent34xx(Agilent34xx_Driver): #, Agilent34xx_Swtch
     "Agilent HP3488 Switch driver"
 
     def __init__(self, *args, **kwargs):
-        # hide a definition of supported models from ivi
-        self.__dict__.setdefault('_driver_supported_models', ['HP3488A','HP3488B','HP3488R'])
         self._resource_string = args[0]
         
         self._protocol = None
         super().__init__(*args, **kwargs)
-
-        print(' configuring instrument')
-        
-        self._instrument_id = 'HP3488'
-        self._identity_description = "Agilent HP3488/HP3499 series Switch/Control Unit"
-        self._identity_identifier = ""
-        self._identity_revision = ""
-        self._identity_vendor = ""
-        self._identity_instrument_manufacturer = "Agilent Technologies"
-        self._identity_instrument_model = ""
-        self._identity_instrument_firmware_revision = ""
-        self._identity_specification_major_version = 4
-        self._identity_specification_minor_version = 1
-        self._identity_supported_instrument_models = self._driver_supported_models
-
-        self._load_identity()
-        #self._init_channels()
 
         return
 
@@ -467,13 +450,52 @@ class Agilent34xx(Agilent34xx_Driver): #, Agilent34xx_Swtch
 
 class Agilent3488(Agilent34xx):
     def __init__(self, *args, **kwargs):
+        # hide a definition of supported models from ivi
+        self.__dict__.setdefault('_driver_supported_models', ['HP3488A','HP3488B','HP3488R'])
+
         super().__init__(*args, **kwargs)
         self._protocol = 'legacy'
+
+        print(' configuring instrument')
+        self._instrument_id = 'HP3488'
+        self._identity_description = "Agilent HP3488 series Switch/Control Unit"
+        self._identity_identifier = ""
+        self._identity_revision = ""
+        self._identity_vendor = ""
+        self._identity_instrument_manufacturer = "Agilent Technologies"
+        self._identity_instrument_model = ""
+        self._identity_instrument_firmware_revision = ""
+        self._identity_specification_major_version = 4
+        self._identity_specification_minor_version = 1
+        self._identity_supported_instrument_models = self._driver_supported_models
+
+        self._load_identity()
+        # self._init_channels()
         return
 
 
 class Agilent3499(Agilent34xx):
         def __init__(self, *args, **kwargs):
+            # hide a definition of supported models from ivi
+            self.__dict__.setdefault('_driver_supported_models', ['HP3499A'])
+
             super().__init__(*args, **kwargs)
             self._protocol = 'scpi'
+
+            print(' configuring instrument')
+            self._instrument_id = 'HP3499'
+            self._identity_description = "Agilent HP3499 series Switch/Control Unit"
+            self._identity_identifier = ""
+            self._identity_revision = ""
+            self._identity_vendor = ""
+            self._identity_instrument_manufacturer = "Agilent Technologies"
+            self._identity_instrument_model = ""
+            self._identity_instrument_firmware_revision = ""
+            self._identity_specification_major_version = 4
+            self._identity_specification_minor_version = 1
+            self._identity_supported_instrument_models = self._driver_supported_models
+
+            self._load_identity()
+            # self._init_channels()
+
             return

@@ -20,8 +20,7 @@ def printstate():
 
 if __name__ == '__main__':
 
-    print('opening 3488')
-    rack = Agilent3499("TCPIP0::192.168.2.9::gpib0,9::INSTR", id_query=False, simulate=True)
+    rack = Agilent3488("TCPIP0::192.168.2.9::gpib0,9::INSTR", id_query=True, simulate=False)
     print('model', rack.identity.instrument_model)
     print('desc', rack.identity.description)
     rack.utility.reset()
@@ -42,7 +41,7 @@ if __name__ == '__main__':
     driver_setup['is_mux'] = False
 
     print('opening 44470')
-    mux = Agilent44470("TCPIP0::192.168.2.9::gpib0,9::INSTR", id_query=True, driver_setup=driver_setup, simulate=True)
+    mux = Agilent44470("TCPIP0::192.168.2.9::gpib0,9::INSTR", id_query=True, driver_setup=driver_setup, simulate=False)
 
     print('model', mux.identity.instrument_model)
     print('desc', mux.identity.description)

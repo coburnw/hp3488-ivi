@@ -172,13 +172,8 @@ class Agilent44470(Agilent34xx_Plugin):
         return
         
     def _path_disconnect_all(self):
-        cmd = ' CRESET' + str(self.slot_id)
-        
-        if self._driver_operation_simulate:
-            print(cmd)
-        else:
-            self._write(cmd)
-            
+        self._card_reset(self.slot_id)
+
         return
             
     def _path_wait_for_debounce(self, maximum_time):
