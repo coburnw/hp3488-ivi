@@ -3,6 +3,9 @@ __pycache__
 *.pyc
 *.egg-info
 
+# pycharm stuff
+.idea
+
 # emacs stuff
 *~
 *#

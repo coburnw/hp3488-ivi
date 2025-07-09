@@ -7,6 +7,7 @@ import time
 
 import ivi
 from hp3488_ivi import Agilent3488
+from hp3488_ivi import Agilent3499
 from hp3488_ivi import Agilent44470
 from hp3488_ivi import Agilent44472
 
@@ -19,7 +20,8 @@ def printstate():
 
 if __name__ == '__main__':
 
-    rack = Agilent3488("TCPIP0::192.168.2.9::gpib0,9::INSTR", id_query=True)
+    print('opening 3488')
+    rack = Agilent3499("TCPIP0::192.168.2.9::gpib0,9::INSTR", id_query=False, simulate=True)
     print('model', rack.identity.instrument_model)
     print('desc', rack.identity.description)
     rack.utility.reset()
@@ -32,13 +34,16 @@ if __name__ == '__main__':
 
     # driver setup keyword/values
     driver_setup = dict()
-    # configure switch as a buss.
+    #driver_setup['protocol'] = 'legacy'
     driver_setup['slot_id'] = 4
     driver_setup['group_id'] = 0
+
+    # configure switch as a buss.
     driver_setup['is_mux'] = False
 
-    mux = Agilent44470("TCPIP0::192.168.2.9::gpib0,9::INSTR", id_query=True, driver_setup=driver_setup)
-    
+    print('opening 44470')
+    mux = Agilent44470("TCPIP0::192.168.2.9::gpib0,9::INSTR", id_query=True, driver_setup=driver_setup, simulate=True)
+
     print('model', mux.identity.instrument_model)
     print('desc', mux.identity.description)
     for i in range(mux._channel_count):
@@ -68,12 +73,14 @@ if __name__ == '__main__':
     driver_setup = dict()
     driver_setup['slot_id'] = 1
     driver_setup['group_id'] = 0
+    print('opening 44472')
     mux0 = Agilent44472("TCPIP0::192.168.2.9::gpib0,9::INSTR", driver_setup=driver_setup)
     print('model', mux0.identity.instrument_model)
     print('desc', mux0.identity.description)
     
     driver_setup['slot_id'] = 1
     driver_setup['group_id'] = 1
+    print('opening 44472')
     mux1 = Agilent44472("TCPIP0::192.168.2.9::gpib0,9::INSTR", driver_setup=driver_setup)
     print('model', mux1.identity.instrument_model)
     print('desc', mux1.identity.description)

@@ -30,12 +30,15 @@ THE SOFTWARE.
 
 import ivi
 from ivi import swtch
-from .agilent3488 import Agilent3488_Plugin
+from .agilent3488 import Agilent34xx_Plugin
     
-class Agilent44472(Agilent3488_Plugin):
+class Agilent44472(Agilent34xx_Plugin):
     "Agilent HP44472 IVI VHF Dual Mux Plug-in Board"
     
     def __init__(self, *args, **kwargs):
+        # hide a definition of supported models from ivi
+        self.__dict__.setdefault('_driver_supported_models', ['44472'])
+
         super().__init__(*args, **kwargs)
 
         self._identity_description = "Agilent HP44472 Dual 4-Channel VHF Switch Module, Group {}".format(self.group_id)
@@ -47,15 +50,13 @@ class Agilent44472(Agilent3488_Plugin):
         self._identity_instrument_firmware_revision = ""
         self._identity_specification_major_version = 3
         self._identity_specification_minor_version = 0
-        self._identity_supported_instrument_models = ['HP44472']
+        self._identity_supported_instrument_models = self._driver_supported_models
 
         if self.group_id < 0 or self.group_id > 1:
             raise ivi.OutOfRangeException('device contains only two switch groups (group0,group1)')
-        
-        if 'driver_setup' not in kwargs.keys():
-            kwargs['driver_setup'] = dict()
 
         self._load_identity()
+        print(self.protocol)
         
         return
 
@@ -123,10 +124,11 @@ class Agilent44472(Agilent3488_Plugin):
         channel_address = self._name_to_address(channel_name)
 
         # com channel is always connected.  quietly ignore
-        if 'com' not in channel_name.lower():
+        if 'com' in channel_name.lower():
+            pass
+        else:
             print('connecting {} to Common'.format(channel_address))
-            cmd = ' CLOSE' + str(channel_address)
-            self._write(cmd)
+            self._chan_close(channel_address)
 
         return
 
@@ -134,11 +136,11 @@ class Agilent44472(Agilent3488_Plugin):
         channel_address = self._name_to_address(channel_name)
 
         # com channel is always connected.  quietly ignore
-        if 'com' not in channel_name.lower():
+        if 'com' in channel_name.lower():
+            pass
+        else:
             print('disconnecting ' + str(channel_address) + ' from ' + 'Common')
-            cmd = ' OPEN' + str(channel_address)
-            self._write(cmd)
-            
+            self._chan_open(channel_address)
         return
                 
     def _path_can_connect(self, channel1, channel2):
@@ -157,20 +159,20 @@ class Agilent44472(Agilent3488_Plugin):
         if self._path_can_connect(channel1, channel2):
             self._chan_connect(channel1)
             self._chan_connect(channel2)
+
         return
         
     def _path_disconnect(self, channel1, channel2):
         if self._path_can_connect(channel1, channel2):
             self._chan_disconnect(channel1)
             self._chan_disconnect(channel2)
+
         return
         
     def _path_disconnect_all(self):
-        cmd = ' CRESET' + str(self.slot_id)
-        if self._driver_operation_simulate:
-            print(cmd)
-        else:
-            self._write(cmd)
-            
+        self._card_reset(self.slot_id)
+
+        return
+
     def _path_wait_for_debounce(self, maximum_time):
         pass

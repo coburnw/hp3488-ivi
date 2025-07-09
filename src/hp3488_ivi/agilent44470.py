@@ -30,9 +30,9 @@ THE SOFTWARE.
 
 import ivi
 from ivi import swtch
-from .agilent3488 import Agilent3488_Plugin
+from .agilent3488 import Agilent34xx_Plugin
          
-class Agilent44470(Agilent3488_Plugin):
+class Agilent44470(Agilent34xx_Plugin):
     '''Agilent HP44470 IVI 10 Channel Mux Board'''
     
     def __init__(self, *args, **kwargs):
@@ -125,18 +125,12 @@ class Agilent44470(Agilent3488_Plugin):
         return channel_address
         
     def _chan_connect(self, channel):
-        #print('connecting ' + str(channel) + ' to ' + 'Common')
         channel_address = self._name_to_address(channel)
 
         if self.driver_setup['is_mux']:
-            cmd = ' CHAN' + str(channel_address)
+            self._chan_step(channel_address)
         else:
-            cmd = ' CLOSE' + str(channel_address)
-                    
-        if self._driver_operation_simulate:
-            print(cmd)
-        else:
-            self._write(cmd)
+            self._chan_close(channel_address)
 
         return
 
@@ -146,12 +140,8 @@ class Agilent44470(Agilent3488_Plugin):
         if self.driver_setup['is_mux']:
             self._path_disconnect_all()
         else:
-            cmd = ' OPEN' + str(channel_address)
-            if self._driver_operation_simulate:
-                print(cmd)
-            else:
-                self._write(cmd)
-            
+            self._chan_open(channel_address)
+
         return
         
     def _path_can_connect(self, channel1, channel2):
