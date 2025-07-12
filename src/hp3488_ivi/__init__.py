@@ -1,10 +1,8 @@
 """
 
-Python Interchangeable Virtual Instrument Driver
+Python IVI Driver for HP3488/3499 Switch Control Unit and related Plug-In Boards
 
-Copyright (c) 2012-2014 Alex Forencich
-
-Modified by Coburn Wightman 2017-2024
+by Coburn Wightman 2017-2024
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

@@ -33,11 +33,11 @@ from ivi import swtch
 from .agilent3488 import Agilent34xx_Plugin
     
 class Agilent44472(Agilent34xx_Plugin):
-    "Agilent HP44472 IVI VHF Dual Mux Plug-in Board"
+    "Agilent HP44472 IVI VHF Dual Mux Plug-in Card"
     
     def __init__(self, *args, **kwargs):
         # hide a definition of supported models from ivi
-        self.__dict__.setdefault('_driver_supported_models', ['44472'])
+        self._driver_supported_models = ['44472']
 
         super().__init__(*args, **kwargs)
 
@@ -56,8 +56,7 @@ class Agilent44472(Agilent34xx_Plugin):
             raise ivi.OutOfRangeException('device contains only two switch groups (group0,group1)')
 
         self._load_identity()
-        #print(self.protocol)
-        
+
         return
 
     def _init_channels(self):

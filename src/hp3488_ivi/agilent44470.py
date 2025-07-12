@@ -33,15 +33,15 @@ from ivi import swtch
 from .agilent3488 import Agilent34xx_Plugin
          
 class Agilent44470(Agilent34xx_Plugin):
-    '''Agilent HP44470 IVI 10 Channel Mux Board'''
+    '''Agilent HP44470 IVI 10 Channel Mux Card'''
     
     def __init__(self, *args, **kwargs):
         # hide a definition of supported models from ivi
-        self.__dict__.setdefault('_driver_supported_models', ['44470'])
-        
+        self._driver_supported_models = ['44470']
+
         super().__init__(*args, **kwargs)
 
-        self._identity_description = "Agilent HP44470 Ten Channel Mux Board, Group 0"
+        self._identity_description = "Agilent HP44470 Ten Channel Mux Card, Group 0"
         self._identity_identifier = ""
         self._identity_revision = ""
         self._identity_vendor = ""
@@ -51,9 +51,12 @@ class Agilent44470(Agilent34xx_Plugin):
         self._identity_specification_major_version = 3
         self._identity_specification_minor_version = 0
         self._identity_supported_instrument_models = self._driver_supported_models
-        
-        if 'is_mux' not in self.driver_setup:
-            self.driver_setup['is_mux'] = True
+
+        # mbb: make-before-break
+        # default is a mux configuration where only one switch is connected to common
+        # setting mbb=True allows multiple channel to be closed with or without com
+        if 'mbb' not in self.driver_setup:
+            self.driver_setup['mbb'] = False
 
         if self.group_id < 0 or self.group_id > 0:
             raise ivi.OutOfRangeException('device contains only one switch group (group0)')
@@ -127,20 +130,20 @@ class Agilent44470(Agilent34xx_Plugin):
     def _chan_connect(self, channel):
         channel_address = self._name_to_address(channel)
 
-        if self.driver_setup['is_mux']:
-            self._chan_step(channel_address)
-        else:
+        if self.driver_setup['mbb']:
             self._chan_close(channel_address)
+        else:
+            self._chan_step(channel_address)
 
         return
 
     def _chan_disconnect(self, channel):
         channel_address = self._name_to_address(channel)
 
-        if self.driver_setup['is_mux']:
-            self._path_disconnect_all()
-        else:
+        if self.driver_setup['mbb']:
             self._chan_open(channel_address)
+        else:
+            self._path_disconnect_all()
 
         return
         
@@ -151,7 +154,7 @@ class Agilent44470(Agilent34xx_Plugin):
         
         if chan1 == chan2:
             raise swtch.CannotConnectToItselfException
-        elif self.driver_setup['is_mux'] and (chan1 != self._channel_count) and (chan2 != self._channel_count):
+        elif not self.driver_setup['mbb'] and (chan1 != self._channel_count) and (chan2 != self._channel_count):
             raise swtch.InvalidSwitchPathException("in mux mode, valid paths must contain a 'common' channel")
         
         return True

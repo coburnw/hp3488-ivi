@@ -39,8 +39,8 @@ and related fully defined before calling super()__init__() to prevent odd error 
 '''
 
 
-class Agilent34xx_Driver(ivi.Driver): #, swtch.Base
-    ''' Base class shared by both the rack and its plugins '''
+class Agilent34xx_Driver(ivi.Driver):
+    ''' Agilent 34xx base class shared by both the rack and its plugins '''
 
     def __init__(self, *args, **kwargs):
         self._protocol = 'legacy'
@@ -158,7 +158,7 @@ class Agilent34xx_Driver(ivi.Driver): #, swtch.Base
 
         return self._device_ask(cmd)
 
-    def _card_type_query(self, slot):
+    def _card_type(self, slot):
         card_type = 'No card in simulate mode'
 
         if self.protocol == 'scpi':
@@ -222,6 +222,14 @@ class Agilent34xx_Driver(ivi.Driver): #, swtch.Base
         self._device_write(cmd)
         return
 
+    def _chan_view(self, channel_address):
+        if self.protocol == 'scpi':
+            cmd = 'scpi chan view cmd'
+        else:
+            cmd = 'VIEW' + str(channel_address)
+
+        return self._device_ask(cmd)
+
     def _chan_step(self, channel_address=None):
         if self.protocol == 'scpi':
             cmd = 'scpi chan step cmd'
@@ -234,7 +242,7 @@ class Agilent34xx_Driver(ivi.Driver): #, swtch.Base
         return
 
 class Agilent34xx_Plugin(Agilent34xx_Driver, swtch.Base): #
-    ''' Base class for Agilent 3488/3499 Plug-in boards '''
+    ''' Base class for Agilent 3488/3499 Plug-in Cards '''
     
     def __init__(self, *args, **kwargs):
         if 'driver_setup' not in kwargs.keys():
@@ -267,7 +275,7 @@ class Agilent34xx_Plugin(Agilent34xx_Driver, swtch.Base): #
             self._identity_instrument_model = "Not available while simulating"
             self._identity_instrument_firmware_revision = "Not available while simulating"
         else:
-            card_type = self._card_type_query(self.slot_id) 
+            card_type = self._card_type(self.slot_id)
             #print('   found: {}'.format(card_type))            
             self._identity_instrument_model = card_type
             
@@ -347,7 +355,7 @@ class Agilent34xx_Swtch(swtch.Base):
         chan = addr - slot * 100
         return slot, chan
 
-    # between board paths
+    # between card paths
     def _path_can_connect(self, channel_a, channel_b):
         # get_index will raise if channel invalid
         slot_a, chan_a = self.parse_channel_address(channel_a)
@@ -381,7 +389,7 @@ class Agilent34xx_Swtch(swtch.Base):
 
 
 class Agilent34xx(Agilent34xx_Driver): #, Agilent34xx_Swtch
-    "Agilent HP3488 Switch driver"
+    ''' Agilent HP34xx Generic Mainframe Driver '''
 
     def __init__(self, *args, **kwargs):
         self._resource_string = args[0]
@@ -441,7 +449,8 @@ class Agilent34xx(Agilent34xx_Driver): #, Agilent34xx_Swtch
 
     def _utility_self_test(self):
         message = "Self test passed"
-        code = self._rack_test()
+        code = int(self._rack_test())
+
         if code != 0:
             message = "Self test failed"
 
@@ -449,9 +458,12 @@ class Agilent34xx(Agilent34xx_Driver): #, Agilent34xx_Swtch
 
 
 class Agilent3488(Agilent34xx):
+    ''' Agilent 3488 Mainframe Driver '''
+
     def __init__(self, *args, **kwargs):
         # hide a definition of supported models from ivi
-        self.__dict__.setdefault('_driver_supported_models', ['HP3488A','HP3488B','HP3488R'])
+        #self.__dict__.setdefault('_driver_supported_models', ['HP3488A','HP3488B','HP3488R'])
+        self._driver_supported_models = ['HP3488A','HP3488B','HP3488R']
 
         super().__init__(*args, **kwargs)
         self._protocol = 'legacy'
@@ -475,27 +487,30 @@ class Agilent3488(Agilent34xx):
 
 
 class Agilent3499(Agilent34xx):
-        def __init__(self, *args, **kwargs):
-            # hide a definition of supported models from ivi
-            self.__dict__.setdefault('_driver_supported_models', ['HP3499A'])
+    ''' Agilent 3488 Mainframe Driver '''
 
-            super().__init__(*args, **kwargs)
-            self._protocol = 'scpi'
+    def __init__(self, *args, **kwargs):
+        # hide a definition of supported models from ivi
+        #self.__dict__.setdefault('_driver_supported_models', ['HP3499A'])
+        self._driver_supported_models =  ['HP3499A']
 
-            print(' configuring instrument')
-            self._instrument_id = 'HP3499'
-            self._identity_description = "Agilent HP3499 series Switch/Control Unit"
-            self._identity_identifier = ""
-            self._identity_revision = ""
-            self._identity_vendor = ""
-            self._identity_instrument_manufacturer = "Agilent Technologies"
-            self._identity_instrument_model = ""
-            self._identity_instrument_firmware_revision = ""
-            self._identity_specification_major_version = 4
-            self._identity_specification_minor_version = 1
-            self._identity_supported_instrument_models = self._driver_supported_models
+        super().__init__(*args, **kwargs)
+        self._protocol = 'scpi'
 
-            self._load_identity()
-            # self._init_channels()
+        print(' configuring instrument')
+        self._instrument_id = 'HP3499'
+        self._identity_description = "Agilent HP3499 series Switch/Control Unit"
+        self._identity_identifier = ""
+        self._identity_revision = ""
+        self._identity_vendor = ""
+        self._identity_instrument_manufacturer = "Agilent Technologies"
+        self._identity_instrument_model = ""
+        self._identity_instrument_firmware_revision = ""
+        self._identity_specification_major_version = 4
+        self._identity_specification_minor_version = 1
+        self._identity_supported_instrument_models = self._driver_supported_models
 
-            return
+        self._load_identity()
+        # self._init_channels()
+
+        return

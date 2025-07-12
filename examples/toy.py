@@ -2,12 +2,11 @@
 #
 #
 
-import sys
 import time
 
 import ivi
 from hp3488_ivi import Agilent3488
-from hp3488_ivi import Agilent3499
+#from hp3488_ivi import Agilent3499
 from hp3488_ivi import Agilent44470
 from hp3488_ivi import Agilent44472
 
@@ -24,7 +23,7 @@ if __name__ == '__main__':
     print('model', rack.identity.instrument_model)
     print('desc', rack.identity.description)
     rack.utility.reset()
-    rack.utility.self_test()
+    print(rack.utility.self_test())
 
     print()
     
@@ -33,26 +32,24 @@ if __name__ == '__main__':
 
     # driver setup keyword/values
     driver_setup = dict()
-    #driver_setup['protocol'] = 'legacy'
+    driver_setup['protocol'] = 'legacy'
     driver_setup['slot_id'] = 4
     driver_setup['group_id'] = 0
-
-    # configure switch as a buss.
-    driver_setup['is_mux'] = False
+    driver_setup['mbb'] = True    # make-before-break. configure switch as a buss.
 
     print('opening 44470')
     mux = Agilent44470("TCPIP0::192.168.2.9::gpib0,9::INSTR", id_query=True, driver_setup=driver_setup, simulate=False)
 
     print('model', mux.identity.instrument_model)
     print('desc', mux.identity.description)
-    for i in range(mux._channel_count):
+    for i in range(len(mux.channels)):
         print(mux.channels[i].name)
 
     # use switch as a buss
     mux.path.connect('chan3', 'chan4')
 
     # reconfigure switch as a mux
-    mux.driver_setup['is_mux'] = True
+    mux.driver_setup['mbb'] = False
 
     # mux
     mux.path.connect('chan3', 'com')
@@ -72,6 +69,7 @@ if __name__ == '__main__':
     driver_setup = dict()
     driver_setup['slot_id'] = 1
     driver_setup['group_id'] = 0
+
     print('opening 44472')
     mux0 = Agilent44472("TCPIP0::192.168.2.9::gpib0,9::INSTR", driver_setup=driver_setup)
     print('model', mux0.identity.instrument_model)
@@ -84,7 +82,7 @@ if __name__ == '__main__':
     print('model', mux1.identity.instrument_model)
     print('desc', mux1.identity.description)
     
-    for i in range(mux1._channel_count):
+    for i in range(len(mux1.channels)):
         print(mux1.channels[i].name)
 
     mux0.path.connect('chan2', 'com')
