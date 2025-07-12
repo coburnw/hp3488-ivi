@@ -2,14 +2,13 @@
 #
 #
 
-import sys
 import time
 
 import ivi
-
-#import hp3488_ivi
-from hp3488_ivi import agilent44470
-from hp3488_ivi import agilent44472
+from hp3488_ivi import Agilent3488
+#from hp3488_ivi import Agilent3499
+from hp3488_ivi import Agilent44470
+from hp3488_ivi import Agilent44472
 
 ##
 ## use IVI and the driver to interact with a vxi-11 connected instrument.
@@ -19,52 +18,74 @@ def printstate():
     pass
 
 if __name__ == '__main__':
-    config_slot_1a = {'slot_id':1, 'group_id':0}
-    config_slot_1b = {'slot_id':1, 'group_id':1}
-    bnc_a = agilent44472("TCPIP0::192.168.2.9::gpib0,9::INSTR", driver_setup=config_slot_1a)
-    bnc_b = agilent44472("TCPIP0::192.168.2.9::gpib0,9::INSTR", driver_setup=config_slot_1b)
-    
-    config_slot_4 = {'slot_id':4, 'group_id':0, 'is_mux':True}
-    mux = agilent44470("TCPIP0::192.168.2.9::gpib0,9::INSTR", driver_setup=config_slot_4)
 
-    #mux.help()
-    #mux.driver_operation.simulate = False
+    rack = Agilent3488("TCPIP0::192.168.2.9::gpib0,9::INSTR", id_query=True, simulate=False)
+    print('model', rack.identity.instrument_model)
+    print('desc', rack.identity.description)
+    rack.utility.reset()
+    print(rack.utility.self_test())
 
-    #print(mux.identity.instrument_firmware_revision)
-    #print(mux.identity.instrument_serial_number)
-    #print(mux.identity.supported_instrument_models)
-    print(mux.identity.group_capabilities)
-    print(mux.identity.identifier)
-
-    #print('initiating self test: ') 
-    #mux.utility.self_test()
-
-    print(mux.identity.description)
-    print(mux.identity.instrument_manufacturer),
-    print(mux.identity.instrument_model),
-    print(' has ' + str(len(mux.channels)) + ' channels.')
-    mux.path.connect('channel0','common')
-    time.sleep(1)
-    mux.path.connect('channel1','common')
-    time.sleep(1)
-    mux.path.connect('channel2','common')
-    time.sleep(1)
-    mux.path.connect('channel3','common')
-    time.sleep(1)
-    mux.path.disconnect('channel3','common')
-    time.sleep(1)
     print()
     
-    print(bnc_a.identity.description)
-    print(bnc_a.identity.instrument_manufacturer),
-    print(bnc_a.identity.instrument_model),
-    print(' has ' + str(len(bnc_a.channels)) + ' channels.')
-    bnc_a.path.connect('channel0','common')
-    time.sleep(1)
-    bnc_a.path.connect('channel1','common')
-    time.sleep(1)
-    bnc_a.path.connect('channel2','common')
-    time.sleep(1)
-    bnc_a.path.connect('channel3','common')
-    time.sleep(1)
-    bnc_a.path.disconnect('channel3','common')
+    # single group card
+    rack._card_monitor('4')
+
+    # driver setup keyword/values
+    driver_setup = dict()
+    driver_setup['protocol'] = 'legacy'
+    driver_setup['slot_id'] = 4
+    driver_setup['group_id'] = 0
+    driver_setup['mbb'] = True    # make-before-break. configure switch as a buss.
+
+    print('opening 44470')
+    mux = Agilent44470("TCPIP0::192.168.2.9::gpib0,9::INSTR", id_query=True, driver_setup=driver_setup, simulate=False)
+
+    print('model', mux.identity.instrument_model)
+    print('desc', mux.identity.description)
+    for i in range(len(mux.channels)):
+        print(mux.channels[i].name)
+
+    # use switch as a buss
+    mux.path.connect('chan3', 'chan4')
+
+    # reconfigure switch as a mux
+    mux.driver_setup['mbb'] = False
+
+    # mux
+    mux.path.connect('chan3', 'com')
+    time.sleep(0.5)
+    mux.path.connect('chan4', 'com')
+    time.sleep(0.5)
+    mux.path.connect('chan5', 'com')
+    time.sleep(0.5)
+    mux.path.connect('chan6', 'com')
+
+    print()
+    
+    # multi group card
+    #rack._card_monitor('1')
+
+    # use default driver setup values
+    driver_setup = dict()
+    driver_setup['slot_id'] = 1
+    driver_setup['group_id'] = 0
+
+    print('opening 44472')
+    mux0 = Agilent44472("TCPIP0::192.168.2.9::gpib0,9::INSTR", driver_setup=driver_setup)
+    print('model', mux0.identity.instrument_model)
+    print('desc', mux0.identity.description)
+    
+    driver_setup['slot_id'] = 1
+    driver_setup['group_id'] = 1
+    print('opening 44472')
+    mux1 = Agilent44472("TCPIP0::192.168.2.9::gpib0,9::INSTR", driver_setup=driver_setup)
+    print('model', mux1.identity.instrument_model)
+    print('desc', mux1.identity.description)
+    
+    for i in range(len(mux1.channels)):
+        print(mux1.channels[i].name)
+
+    mux0.path.connect('chan2', 'com')
+    mux1.path.connect('chan1', 'com')
+    
+    exit()
