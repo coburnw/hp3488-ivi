@@ -46,7 +46,7 @@ Editable allows one to make changes to the repository and have them instantly av
 applicaton. As an aside, using `pip install -e .` works perfectly well for both python-ivi and 
 the python-vxi11 repositories as well.
 ```
-git clone https://github.com/coburnw/hp3488-ivi
+git clone https://github.com/coburnw/hp3488-ivi.git
 cd hp3488-ivi
 pip install -e .
 ```
