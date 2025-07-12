@@ -8,7 +8,7 @@ The HP 3488A is a modern styled (pre Agilent) rack for various
 switch modules often used for routing signals between 
 devices for product development or test.
 
-This driver is composed of a driver for each plugin and the 3488A rack
+This repository is composed of a driver for each plugin and the 3488A rack
 itself.  The following plugins are functional:
   * 44470A Ten Channel Differential Mux
   * 44472A Dual Four Channel VHF Mux
@@ -24,7 +24,7 @@ newer scpi enabled rack to implement if needed.
 
 The HP34xx_Plugin class implements the vast majority of the ivi boiler plate needed
 for a plugin card driver.  Derive from that to greatly ease the chore of building
-a driver for a needed plugin card.  If you are happy with your results, consider a 
+a driver for a new plugin card.  If you are happy with your results, consider a 
 pull request to add your driver to the list of supported plugins.  
 
 A preliminary 3488A driver has been added which currently only
@@ -33,14 +33,18 @@ smart routing between cards in the future.
 Very much a work in progress.  
 
 ### Requirements
-  * developed and tested with Python3.8 
+  * developed and tested with Python3.8
+  * extensive testing by the user before use
   
 ### Dependencies
   * python-ivi https://github.com/python-ivi/python-ivi
   * python-vxi11 https://github.com/python-ivi/python-vxi11
   
 ### Installation
-Using pip to install in editable mode seems the cleanest way to avoid pythons import troubles. Editable allows one to make changes to the repository and have them instantly available in their applicaton. As an aside, using ```pip install -e .``` works perfectly well for both python-ivi and the python-vxi11 repositories as well.
+Using pip to install in editable mode seems the cleanest way to avoid pythons import troubles. 
+Editable allows one to make changes to the repository and have them instantly available in their 
+applicaton. As an aside, using `pip install -e .` works perfectly well for both python-ivi and 
+the python-vxi11 repositories as well.
 ```
 git clone https://github.com/coburnw/hp3488-ivi
 cd hp3488-ivi
